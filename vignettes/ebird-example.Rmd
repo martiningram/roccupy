@@ -19,6 +19,18 @@ knitr::opts_chunk$set(
 library(roccupy)
 ```
 
+Let's first make sure reticulate works as needed. Note that this will depend on your setup. I'm using reticulate with conda and an environment called `pymc3`, but you will need to change this to your own version.
+
+```{r}
+library(reticulate)
+library(roccupy)
+
+# If you are running this yourself, please make sure that reticulate uses the 
+# correct virtual environment.
+# Set this to FALSE if you don't have a GPU.
+roccupy::set_gpu(TRUE)
+```
+
 This document shows how on a small subset of eBird using 8,000 checklists and 32 species.
 
 ### The data format
@@ -90,26 +102,15 @@ We've now preprocessed our environmental covariates so that the continuous covar
 full_X_env <- data.frame(full_X_env)
 head(full_X_env)
 ```
-Let's make sure reticulate works as needed. Note that this will depend on your setup. I'm using reticulate with conda and an environment called `pymc3`, but you will need to change this to your own version.
-
-```{r}
-library(reticulate)
-
-# You may have a different setup.
-# I installed the package into my "pymc3" conda environment, so:
-use_condaenv('pymc3')
-
-library(roccupy)
-
-# Set this to FALSE if you don't have a GPU.
-roccupy::set_gpu(TRUE)
-```
 
 ```{r}
 # We can generate a formula. You can also specify one as you like.
 # It just has to be compatible with the patsy package.
-env_formula <- ml_tools$patsy$create_formula(cov_names=bio_cols, main_effects = TRUE, quadratic_effects = TRUE, interactions = FALSE)
-to_add <- paste(colnames(full_X_env)[grep('has_', colnames(full_X_env))], collapse = '+')
+env_formula <- ml_tools$patsy$create_formula(
+  cov_names=bio_cols, main_effects = TRUE,  
+  quadratic_effects = TRUE, interactions = FALSE)
+to_add <- paste(colnames(full_X_env)[grep('has_', colnames(full_X_env))], 
+                collapse = '+')
 
 env_formula <- paste0(env_formula, '+', to_add)
 
