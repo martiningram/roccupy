@@ -37,6 +37,8 @@ probabilities at new sites / checklists and `coef`, which returns draws of the
 estimated coefficients. The arguments of these functions are documented.
 
 There is also a vignette called `ebird-example` which walks through fitting a
-model to a subset of eBird. Note that it is fast to build if a GPU is available
-(less than a minute), but considerably slower if not (about 20 minutes), so
-patience is advised if no GPU is available.
+model to a subset of eBird (8,000 checklists, 32 species). Note that it is fast
+to build if a GPU is available (less than a minute), but considerably slower if
+not (about 20 minutes), so patience is advised if no GPU is available. The
+vignette rendered in PDF format is also available here:
+https://github.com/martiningram/roccupy/blob/main/vignettes/ebird-example.pdf .
