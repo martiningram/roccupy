@@ -137,23 +137,30 @@ These are the inferences made by the model. We can go through a little bit of ma
 
 First, we model the probability that species $j$ is present at site $i$. We can write this as:
 
-$$
+\begin{align}
 y_{ij} \sim \textrm{Bern}(\Psi_{ij}), \\
   \textrm{logit}(\Psi_{ij}) = {x}_i^\intercal {\beta}_j + \gamma_j, \\
   {\beta_j} \stackrel{iid}{\sim} \mathcal{N}(0, I), \\
   \gamma_j \stackrel{iid}{\sim} \mathcal{N}(0, 10^2).
-$$
+\end{align}
+
 The $\gamma_j$ here are the `env_intercepts`, and the $\beta_j$ are the `env_slopes` reported by the model. 
 
 Next, we can take a look at the detection part of the model:
 
-$$
-  p(s_{ijk} = 1 \mid y_{ij} = 1) = p_{ijk}, \\
-  \textrm{logit}(p_{ijk}) = {x}_{ik}^{(obs)\intercal} {\beta}^{(obs)}_j \\
-    \beta_{jl}^{(obs)} \stackrel{iid}{\sim} \mathcal{N}(\mu_l, \sigma_l^2), \\
-  \mu_l \stackrel{iid}{\sim} \mathcal{N}(0, 1), \\
-  \sigma_l \stackrel{iid}{\sim} \mathcal{H}(1),
-$$
+\begin{align}
+  p(s_{ijk} = 1 \mid y_{ij} = 1) &= p_{ijk}, \\
+  \textrm{logit}(p_{ijk}) &= {x}_{ik}^{(obs)\intercal} {\beta}^{(obs)}_j,
+\end{align}
+
+where
+
+\begin{align}
+  \beta_{jl}^{(obs)} &\stackrel{iid}{\sim} \mathcal{N}(\mu_l, \sigma_l^2), \\
+  \mu_l &\stackrel{iid}{\sim} \mathcal{N}(0, 1), \\
+  \sigma_l &\stackrel{iid}{\sim} \mathcal{H}(1).
+\end{align}
+
 This says that the (logit) of the probability of detecting species $j$ at site $i$ on the $k$-th visit, if it is present, is given by a linear function of the observation covariates and species-specific observation coefficients $\beta_j^{(obs)}$. These species coefficients are the `obs_slopes` in the model results. The next three lines specify the hierarchical prior on the observation covariates. The group means $\mu_l$ and group standard deviations $\sigma_l$ are reported in `obs_prior_means` and `obs_prior_sds`, respectively. The $\mathcal{H}$ denotes the half-normal distribution.
 
 We will now quickly take a look at some of the results. First, let's look at the environment intercepts:

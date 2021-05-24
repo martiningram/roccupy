@@ -27,8 +27,8 @@
 #'
 #' @export
 msod_vi <- function(env_formula, obs_formula, X_env, X_checklist, y_checklist,
-                      checklist_cell_ids, M = 20L, n_draws = 1000L,
-                      verbose = TRUE) {
+                    checklist_cell_ids, M = 20L, n_draws = 1000L,
+                    verbose = TRUE) {
 
     # Instantiate the python object
     model_obj <- occu_py$multi_species_occu_advi$MultiSpeciesOccuADVI(env_formula,
