@@ -62,6 +62,10 @@ not (about 20 minutes), so patience is advised if no GPU is available. The
 vignette rendered in PDF format is also available here:
 https://github.com/martiningram/roccupy/blob/main/vignettes/ebird-example.pdf .
 
+Note that if you would like to build the vignette yourself, you will need the
+`ggplot2`, `ggrepel` packages, as well as a working installation of LaTeX for
+use with RMarkdown (e.g. tinytex).
+
 ## Questions
 
 If there are any problems, please raise an issue!
