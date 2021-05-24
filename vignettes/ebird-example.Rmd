@@ -23,7 +23,6 @@ Let's first make sure reticulate works as needed. Note that this will depend on 
 
 ```{r}
 library(reticulate)
-library(roccupy)
 
 # If you are running this yourself, please make sure that reticulate uses the 
 # correct virtual environment.
