@@ -1,6 +1,7 @@
 ---
 title: "Occupancy detection modelling with ROccuPy"
-output: rmarkdown::html_vignette
+output: pdf_document
+#output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Occupancy detection modelling with ROccuPy}
   %\VignetteEngine{knitr::rmarkdown}
