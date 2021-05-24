@@ -15,6 +15,11 @@ numpyro <- NULL
 
 }
 
+#' Installs the python requirements of the package.
+#'
+#' @param gpu Whether or not to install the GPU version of the package. Note
+#' that using the GPU version is highly recommended.
+#' 
 #' @export
 install_occu_py <- function(gpu = TRUE) {
 
@@ -40,6 +45,13 @@ install_occu_py <- function(gpu = TRUE) {
 
 }
 
+#' Set whether to use the GPU or not
+#'
+#' If use of a GPU is desired (and this is highly recommended), this function
+#' must be called at the start of the program.
+#'
+#' @param use_gpu Whether or not to use the GPU.
+#' 
 #' @export
 set_gpu <- function(use_gpu = TRUE) {
 
