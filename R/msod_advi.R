@@ -47,6 +47,23 @@ msod_vi <- function(env_formula, obs_formula, X_env, X_checklist, y_checklist,
 
 }
 
+#' Predict using MSOD model
+#'
+#' Predicts the probability that a site is suitable, or that a species is
+#' detected, given environmental and detection covariates.
+#'
+#' @param obj The fitted MSOD model.
+#' @param X_env_new The new environmental covariates to predict suitability for.
+#' @param X_obs_new The new observation covariates to use for prediction. Can be
+#'     NULL if only environmental suitability is of interest.
+#' @param type The type of prediction to make. If type = 'env', the probability
+#'     of presence is returned, and X_obs_new can be NULL. If type = 'obs', the
+#'     probability of detection is returned (i.e., species is present _and_
+#'     detected), and X_obs_new must be provided.
+#'
+#' @return A DataFrame with one column for each species, filled with the
+#'     predicted probabilities.
+#' 
 #' @export
 #' @method predict msod_advi
 predict.msod_advi <- function(obj, X_env_new, X_obs_new = NULL, type = 'env')
@@ -66,6 +83,21 @@ predict.msod_advi <- function(obj, X_env_new, X_obs_new = NULL, type = 'env')
 
 } 
 
+#' Retrieve draws for coefficients in MSOD model
+#'
+#' Returns draws of the estimated parameters.
+#'
+#' @param obj The fitted MSOD model.
+#'
+#' @return A list containing the following fields: (1) `env_intercepts`, a
+#' DataFrame of draws of the suitability intercepts for each species; (2)
+#' `env_slopes`, a list mapping from species names to DataFrames of draws for
+#' each suitability covariate; (3) `obs_slopes`, a list mapping from species
+#' names to DataFrames of draws for each observation covariate; (4)
+#' obs_prior_means, draws from the group prior means estimated for the
+#' observation process; (5) obs_prior_sds, draws from the group prior standard
+#' deviations for the observation process.
+#'
 #' @export
 #' @method coef msod_advi
 coef.msod_advi <- function(obj) {
@@ -85,6 +117,10 @@ coef.msod_advi <- function(obj) {
 
 }
 
+#' Save the fitted MSOD model to disk
+#'
+#' @param obj The fitted MSOD model object.
+#' @param save_dir The folder to save the model to.
 #' @export
 save_model <- function(obj, save_dir) {
 
@@ -92,6 +128,9 @@ save_model <- function(obj, save_dir) {
 
 }
 
+#' Restore the fitted MSOD model from disk
+#'
+#' @param save_dir The directory the MSOD model was saved to.
 #' @export
 restore_model <- function(save_dir) {
 
