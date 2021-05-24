@@ -1,0 +1,255 @@
+---
+title: "Occupancy detection modelling with ROccuPy"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Occupancy detection modelling with ROccuPy}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(roccupy)
+```
+
+This document shows how on a small subset of eBird using 8,000 checklists and 32 species.
+
+### The data format
+
+```{r}
+# Load the example data
+data(eBird)
+names(eBird)
+```
+
+As you can see, the dataset consists of four different items. Let's go through these in turn.
+
+```{r}
+head(eBird$X_checklist)
+```
+`X_checklist` contains the observation-level covariates. These are things like the duration of the observations, the time of day, and so on -- anything that could affect the detection process.
+
+```{r}
+head(eBird$y_checklist)
+```
+`y_checklist` specifies whether each species was or was not observed for each checklist. `X_checklist` and `y_checklist` should have the same number of rows.
+
+```{r}
+head(eBird$X_env)
+```
+`X_env` contains the environmental covariates thought to influence whether a species is present or absent at each site. Because there are repeat visits, `X_env` will typically have fewer rows than `X_checklist`: there are fewer sites than observations.
+
+```{r}
+head(eBird$checklist_cell_ids)
+```
+Finally, the `checklist_cell_ids` provide the link between sites and observations. Each entry specifies which site (or cell) the observation was made in. For example, in this case, the first observation was made in site 287. Please note that sites are numbered from zero, so this would correspond to X_env[288], for example. Storing the data in this way is useful as some sites are visited far more frequently than others. You can see this here:
+
+```{r}
+head(sort(table(eBird$checklist_cell_ids), decreasing = TRUE), 20)
+```
+
+### Fitting a model to eBird
+
+We'll now walk through the steps required to fit a multi-species occupancy detection model to this dataset using variational inference.
+
+```{r}
+# To make the code a little less cluttered, we can attach the entries in "eBird":
+attach(eBird, warn.conflicts = FALSE)
+
+# We'll want to scale the continuous environment variables.
+bio_cols <- colnames(X_env)[grepl('bio', colnames(X_env))]
+
+X_env_bio <- X_env[, bio_cols]
+X_env_bio_scaled <- scale(X_env_bio)
+
+# We also want to use the "has_" covariates:
+discrete_cols <- X_env[, grepl('has_', colnames(X_env))] == 'True'
+
+full_X_env <- cbind(X_env_bio_scaled, discrete_cols)
+```
+
+```{r}
+# We need to standardise log_duration:
+log_durations <- X_checklist$log_duration
+log_duration_mean <- mean(log_durations)
+log_duration_sd <- sd(log_durations)
+
+X_checklist$log_duration_z <- (log_durations - log_duration_mean) / log_duration_sd
+```
+
+We've now preprocessed our environmental covariates so that the continuous covariates are scaled. You can take a look at the covariates we'll use here:
+
+```{r}
+full_X_env <- data.frame(full_X_env)
+head(full_X_env)
+```
+Let's make sure reticulate works as needed. Note that this will depend on your setup. I'm using reticulate with conda and an environment called `pymc3`, but you will need to change this to your own version.
+
+```{r}
+library(reticulate)
+
+# You may have a different setup.
+# I installed the package into my "pymc3" conda environment, so:
+use_condaenv('pymc3')
+
+library(roccupy)
+
+# Set this to FALSE if you don't have a GPU.
+roccupy::set_gpu(TRUE)
+```
+
+```{r}
+# We can generate a formula. You can also specify one as you like.
+# It just has to be compatible with the patsy package.
+env_formula <- ml_tools$patsy$create_formula(cov_names=bio_cols, main_effects = TRUE, quadratic_effects = TRUE, interactions = FALSE)
+to_add <- paste(colnames(full_X_env)[grep('has_', colnames(full_X_env))], collapse = '+')
+
+env_formula <- paste0(env_formula, '+', to_add)
+
+obs_formula <- "protocol_type + daytimes_alt + log_duration_z + dominant_land_cover"
+```
+
+```{r}
+# Takes about 45 seconds on GPU; 17 minutes on CPU. So GPU definitely recommended!
+start_time <- Sys.time()
+fit_model <- msod_vi(env_formula, obs_formula, full_X_env, X_checklist, 
+                       y_checklist = y_checklist,
+                       checklist_cell_ids = checklist_cell_ids, M=20L)
+end_time <- Sys.time()
+print(end_time - start_time)
+```
+```{r}
+# We can extract the draws for the coefficients as follows:
+coef_draws <- coef(fit_model)
+
+# This is a list:
+names(coef_draws)
+```
+
+These are the inferences made by the model. We can go through a little bit of maths to understand what they mean.
+
+First, we model the probability that species $j$ is present at site $i$. We can write this as:
+
+$$
+y_{ij} \sim \textrm{Bern}(\Psi_{ij}), \\
+  \textrm{logit}(\Psi_{ij}) = {x}_i^\intercal {\beta}_j + \gamma_j, \\
+  {\beta_j} \stackrel{iid}{\sim} \mathcal{N}(0, I), \\
+  \gamma_j \stackrel{iid}{\sim} \mathcal{N}(0, 10^2).
+$$
+The $\gamma_j$ here are the `env_intercepts`, and the $\beta_j$ are the `env_slopes` reported by the model. 
+
+Next, we can take a look at the detection part of the model:
+
+$$
+  p(s_{ijk} = 1 \mid y_{ij} = 1) = p_{ijk}, \\
+  \textrm{logit}(p_{ijk}) = {x}_{ik}^{(obs)\intercal} {\beta}^{(obs)}_j \\
+    \beta_{jl}^{(obs)} \stackrel{iid}{\sim} \mathcal{N}(\mu_l, \sigma_l^2), \\
+  \mu_l \stackrel{iid}{\sim} \mathcal{N}(0, 1), \\
+  \sigma_l \stackrel{iid}{\sim} \mathcal{H}(1),
+$$
+This says that the (logit) of the probability of detecting species $j$ at site $i$ on the $k$-th visit, if it is present, is given by a linear function of the observation covariates and species-specific observation coefficients $\beta_j^{(obs)}$. These species coefficients are the `obs_slopes` in the model results. The next three lines specify the hierarchical prior on the observation covariates. The group means $\mu_l$ and group standard deviations $\sigma_l$ are reported in `obs_prior_means` and `obs_prior_sds`, respectively. The $\mathcal{H}$ denotes the half-normal distribution.
+
+We will now quickly take a look at some of the results. First, let's look at the environment intercepts:
+
+```{r}
+library(ggplot2)
+
+intercept_draws <- coef_draws$env_intercepts
+
+p <- ggplot(intercept_draws, aes(x=`Vireo solitarius`)) + geom_histogram() + theme_classic()
+
+p
+```
+
+We can see that _Vireo solitarius_, the Blue-headed Vireo, has a mean intercept of around -2.2 or so. We can also take a look at its estimates for environmental response:
+
+```{r}
+head(coef_draws$env_slopes$`Vireo solitarius`)
+```
+These are 1000 draws. We can summarise them using their means and sds:
+
+```{r}
+mean_slopes <- colMeans(coef_draws$env_slopes$`Vireo solitarius`)
+sd_slopes <- apply(coef_draws$env_slopes$`Vireo solitarius`, 2, sd)
+
+cbind(mean_slopes, sd_slopes)
+```
+
+It appears that `bio5` seems to be associated with a decreased probability of presence for this bird. What's this one?
+
+```{r}
+ml_tools$sdm$bioclim_lookup$bio5
+```
+
+Indeed, looking at the range map on [All About Birds](https://www.allaboutbirds.org/guide/Blue-headed_Vireo/maps-range), this seems plausible, as this species tends to breed in the North of the US, where it is cool.
+
+Let's now take a look at the observation process. Summarising the group means gives:
+
+```{r}
+colMeans(coef_draws$obs_prior_means)
+```
+
+And the group standard deviations are:
+
+```{r}
+colMeans(coef_draws$obs_prior_sds)
+```
+
+Let's look at how the observation slopes look for our example species:
+
+```{r}
+means <- colMeans(coef_draws$obs_slopes$`Vireo solitarius`)
+sds <- apply(coef_draws$obs_slopes$`Vireo solitarius`, 2, sd)
+
+cbind(means, sds)
+```
+This suggests, for example, that _Vireo solitarius_ is considerably more likely to be detected in the forest than by water, which seems reasonable.
+
+```{r}
+# How about a plot of detectability by day vs detectability by night?
+obs_slopes <- coef_draws$obs_slopes
+
+# This is a list of species names -> draws. Let's compute the means.
+obs_slope_means <- lapply(obs_slopes, colMeans)
+
+obs_slope_means <- data.frame(do.call(rbind, obs_slope_means), check.names = FALSE)
+
+# For easier plotting:
+obs_slope_means$species_name <- row.names(obs_slope_means)
+
+head(obs_slope_means)
+```
+```{r, fig.width=8, fig.height=6}
+# You should see Antrostomus vociferus being much more likely to be detected at dusk than at dawn (the reference)
+library(ggrepel)
+
+ggplot(obs_slope_means, aes(x=`daytimes_alt[T.dusk]`, y=`daytimes_alt[T.early-morning]`, label=species_name)) + geom_point() + geom_text_repel() + theme_classic()
+```
+
+```{r}
+# We can also predict. Here, let's just use the training data.
+# If we want to predict the probabilities of presence, we can use:
+env_preds <- predict(fit_model, full_X_env, type='env')
+```
+
+```{r}
+# If we want the probability of detection, we can use:
+obs_preds <- predict(fit_model, full_X_env, X_checklist, type='obs')
+```
+
+A last noteworthy feature of the package is the ability to save and restore models. You can do this as follows:
+
+```{r}
+# Save the model
+save_model(fit_model, 'save_test')
+```
+```{r}
+# Restore it:
+restored_model <- restore_model('./save_test/')
+```

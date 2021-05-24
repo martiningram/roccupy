@@ -1,0 +1,12 @@
+Package: roccupy
+Version: 0.1
+Date: 2021-05-21
+Title: ROccuPy
+Description: Fast (multi-species) occupancy detection modelling.
+Author: Martin Ingram <martin.ingram@gmail.com>
+Maintainer: Martin Ingram <martin.ingram@gmail.com>
+RoxygenNote: 7.1.1
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
