@@ -29,7 +29,7 @@ setting that up, please follow the steps in [the reticulate
 documentation](https://rstudio.github.io/reticulate/). If there are problems,
 please raise an issue.
 
-## How to use
+## How to use: Multi-species occupancy detection
 
 The main function in the package is `msod_vi`, which fits the model. Here is an
 example:
@@ -65,6 +65,31 @@ https://github.com/martiningram/roccupy/blob/main/vignettes/ebird-example.pdf .
 Note that if you would like to build the vignette yourself, you will need the
 `ggplot2`, `ggrepel` packages, as well as a working installation of LaTeX for
 use with RMarkdown (e.g. tinytex).
+
+## How to use: Single-species occupancy detection
+
+This package also contains code to efficiently fit _single-species_ occupancy
+detection models, making use of automatic differentiation. The code for this is
+very similar:
+
+```R
+fit_model <- ssod_ml(env_formula = "bio1 + bio2",
+                     obs_formula = "log_duration + daytime",
+                     X_env = X_env,
+                     X_checklist = X_checklist, 
+                     y_checklist = y_checklist,
+                     checklist_cell_ids = checklist_cell_ids)
+```
+
+The only difference to `msod_vi` is that here, `y_checklist` is expected to be a
+DataFrame with a single column.
+
+A vignette comparing the results of `ssod_ml` to those made by the package
+`unmarked` is included. The vignette also discusses how to convert from the more
+common "wide" format used by `unmarked` and other packages to the "long" format
+used in `roccupy`. It should be quick to build regardless of whether or not a
+GPU is available, but is also available here:
+https://github.com/martiningram/roccupy/blob/main/vignettes/compare_with_unmarked.pdf
 
 ## Questions
 
