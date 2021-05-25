@@ -16,6 +16,8 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup}
+# Ensure everything is clean
+rm(list=ls())
 library(roccupy)
 ```
 
@@ -112,7 +114,6 @@ to_add <- paste(colnames(full_X_env)[grep('has_', colnames(full_X_env))],
                 collapse = '+')
 
 env_formula <- paste0(env_formula, '+', to_add)
-
 obs_formula <- "protocol_type + daytimes_alt + log_duration_z + dominant_land_cover"
 ```
 

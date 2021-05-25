@@ -7,11 +7,15 @@ ml_tools <- NULL
 #' @export
 numpyro <- NULL
 
+#' @export
+np <- NULL
+
 .onLoad <- function(libname, pkgname) {
 
     occu_py <<- reticulate::import('occu_py', delay_load = TRUE)
     ml_tools <<- reticulate::import('ml_tools', delay_load = TRUE)
     numpyro <<- reticulate::import('numpyro', delay_load = TRUE)
+    np <<- reticulate::import('numpy', delay_load = TRUE)
 
 }
 

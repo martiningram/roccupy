@@ -1,0 +1,140 @@
+---
+title: "Comparison with unmarked package"
+output: pdf_document
+# output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Comparison with unmarked package}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(roccupy)
+```
+
+The goal of this vignette is to show how one can convert from the data format used in `unmarked` to the one used in `roccupy`, and that the maximum likelihood algorithm in `roccupy` closely matches the estimates from `occu` in `unmarked`.
+
+First, load the example data in the `unmarked` package:
+
+```{r}
+library(unmarked)
+wt <- read.csv(system.file("csv","widewt.csv", package="unmarked"))
+```
+The data looks as follows:
+
+```{r}
+head(wt)
+```
+While `unmarked` uses what one might call a "wide" data format, `roccupy` uses a "long" format. We will have to melt the observation covariates. To do so, let us first pull out the columns that belong together:
+
+```{r}
+site_covs <- wt[, c('elev', 'forest', 'length')]
+
+obs_cov_1 <- wt[, c('site', 'date.1', 'date.2', 'date.3')]
+obs_cov_2 <- wt[, c('site', 'ivel.1', 'ivel.2', 'ivel.3')]
+
+y <- wt[, c('site', 'y.1', 'y.2', 'y.3')]
+
+head(obs_cov_1)
+```
+Now, we _melt_ each of them so that each row in the result corresponds to a single visit.
+
+```{r}
+library(reshape2)
+
+# Melt date covariate
+melted_cov_1 <- melt(obs_cov_1, id.vars='site')
+sites_1 <- melted_cov_1$site
+vals_1 <- melted_cov_1$value
+
+# Melt ivel covariate
+melted_cov_2 <- melt(obs_cov_2, id.vars='site')
+sites_2 <- melted_cov_2$site
+vals_2 <- melted_cov_2$value
+
+# Melt presence/absence
+melted_y <- melt(y, id.vars='site')
+sites_y <- melted_y$site
+vals_y <- melted_y$value
+
+# Double-check that the order appears unchanged:
+all(sites_1 == sites_2)
+all(sites_2 == sites_y)
+```
+The key motivation for using the long format is that it is _sparse_. Rather than having to fill missing visits with `NA`, they are simply omitted in the long format. We now put together all the observation-level information and discard the `NA` rows. Note that we subtract 1 from each site so that numbering is _zero-based_ -- this is because `roccupy` uses python under the hood, which uses zero-based indexing.
+
+```{r}
+cur_data <- data.frame(cbind(date=vals_1, ivel=vals_2, site=sites_1 - 1, y=vals_y))
+
+no_nas <- na.omit(cur_data)
+
+# Check how many were removed
+print(dim(cur_data))
+print(dim(no_nas))
+```
+In this case, the savings are negligible. For citizen science data like eBird, however, they are considerable.
+
+Now, we can pull out the arrays we need for the `roccupy` model:
+
+```{r}
+X_obs <- no_nas[, c('date', 'ivel')]
+checklist_cell_ids <- no_nas$site
+X_env <- site_covs
+y_checklist <- data.frame(cur_species=no_nas$y)
+```
+
+Now, fit the model:
+
+```{r}
+result <- ssod_ml('forest + elev + length', 'date + ivel', X_env, X_obs, 
+                  y_checklist, checklist_cell_ids)
+```
+
+We can extract the estimated coefficients:
+
+```{r}
+coef(result)
+```
+
+And we can compare this with what `unmarked` produces:
+
+```{r}
+y <- wt[ ,2:4]
+
+siteCovs <-  wt[ ,5:7]
+
+obsCovs <- list(date = wt[ ,8:10],
+                ivel = wt[ ,11:13])
+
+umf <- unmarkedFrameOccu(y = y, siteCovs = siteCovs, obsCovs = obsCovs)
+
+fm1 <- occu(formula = ~ date + ivel
+                      ~ forest + elev + length,
+            data = umf)
+```
+
+Agreement is very close:
+
+```{r}
+print(coef(fm1, 'state'))
+print(coef(fm1, 'det'))
+```
+Prediction works as follows:
+
+```{r}
+# Predict suitability:
+suit_pred <- predict(result, X_env, type='env')
+
+# Predict probability of observing:
+# Note that here X_env and X_obs lengths must match.
+obs_pred <- predict(result, X_env[checklist_cell_ids + 1, ], X_obs, type='obs')
+
+head(obs_pred)
+```
