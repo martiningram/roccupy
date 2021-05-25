@@ -21,8 +21,6 @@ rm(list=ls())
 library(roccupy)
 ```
 
-Let's first make sure reticulate works as needed. Note that this will depend on your setup. I'm using reticulate with conda and an environment called `pymc3`, but you will need to change this to your own version.
-
 ```{r}
 library(reticulate)
 
