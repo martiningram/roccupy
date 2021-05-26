@@ -1,0 +1,170 @@
+---
+title: "Using roccupy with data from auk"
+# output: rmarkdown::html_vignette
+output: pdf_document
+vignette: >
+  %\VignetteIndexEntry{Using roccupy with data from auk}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(roccupy)
+library(auk)
+```
+
+The goal of this vignette is to illustrate how data can be converted to the format used in `roccupy`. In particular, we'll be looking at how to convert data from the [`auk` package](https://cornelllabofornithology.github.io/auk/index.html) to the required format. Although we will be using only a very small portion of eBird data -- the amount that is included with `auk` -- the steps should be the same for much larger analyses using eBird.
+
+First, we'll follow the steps from the [`auk` introduction](https://cornelllabofornithology.github.io/auk/articles/auk.html) to obtain a small sample of zero-filled records from eBird. If you'd like to know more about what these steps are doing, please read the introduction linked.
+
+```{r}
+# to produce zero-filled data, provide an EBD and sampling event data file
+f_ebd <- system.file("extdata/zerofill-ex_ebd.txt", package = "auk")
+f_smp <- system.file("extdata/zerofill-ex_sampling.txt", package = "auk")
+filters <- auk_ebd(f_ebd, file_sampling = f_smp) %>% 
+  auk_complete()
+filters
+```
+```{r}
+ebd_sed_filtered <- auk_filter(filters, 
+                               file = "ebd-filtered.txt",
+                               file_sampling = "sampling-filtered.txt",
+                               overwrite = TRUE)
+ebd_sed_filtered
+
+ebd_zf <- auk_zerofill(ebd_sed_filtered)
+```
+
+The zero-filled data consists of two tables. One lists the species observations:
+
+```{r}
+str(ebd_zf$observations)
+```
+The other lists the details of each checklist, such as the time spent looking:
+
+```{r}
+str(ebd_zf$sampling_events)
+```
+
+First, we'll reshape the observations into the format required for `roccupy`. What we need is a DataFrame of shape `(n_checklists, n_species)`, rather than the long format produced by `auk`. Luckily, we can easily switch to the required format using the `reshape2` package:
+
+```{r}
+library(reshape2)
+
+y_checklist <- dcast(ebd_zf$observations, checklist_id ~ scientific_name, 
+                     value.var = 'species_observed')
+
+species_names <- unique(ebd_zf$observations$scientific_name)
+
+str(y_checklist)
+```
+
+In the following, we will have to drop some records since they are missing information. To make this a bit easier, we'll put together the observations and checklist details into a single DataFrame:
+
+```{r}
+combined <- merge(ebd_zf$sampling_events, y_checklist, by='checklist_id')
+```
+
+Now, we need to find some environmental covariates and define our sites. Here, we'll use the `worldclim` variables to do both: the covariates in `worldclim` will be our environmental covariates, and the cells in the raster will be our sites. We emphasise here that this example is _not_ meant to be ecologically meaningful: the amount of data is small and it is collected in a very small area, so it is unlikely that the inferences are very insightful.
+
+```{r}
+library(raster)
+
+r <- getData("worldclim",var="bio",res=2.5)
+```
+
+Let's fetch the cell numbers, which will be our sites:
+
+```{r}
+cell_nums <- cellFromXY(r, cbind(combined$longitude, combined$latitude))
+table(cell_nums)
+```
+We have some repeat observations, which is good. To keep track of the cell numbers, add them to the sampling information:
+
+```{r}
+combined$env_cell_num <- cell_nums
+```
+
+Now we'll fetch the environmental covariates in these cells:
+
+```{r}
+unique_cells <- unique(cell_nums)
+cell_vals <- raster::extract(r, unique_cells)
+
+X_env <- data.frame(cell_vals)
+```
+
+Some of them are NA. We will drop these. We will also drop checklists without durations.
+
+```{r}
+X_env$cell_num <- unique_cells
+na_cells <- rowSums(is.na(X_env)) > 0
+to_drop <- unique_cells[na_cells]
+
+# Drop NA cells from sampling info:
+rel_combined <- combined[!(combined$env_cell_num %in% to_drop), ]
+
+# Also only keep those with durations recorded
+rel_combined <- rel_combined[!is.na(rel_combined$duration_minutes), ]
+
+# Drop the NA environmental cells
+rel_X_env <- X_env[!(X_env$cell_num %in% to_drop), ]
+```
+
+The next step is key: we need to match up the checklists with the corresponding sites. We can use R's `match` function to make this easy. However, crucially, sites are numbered from _zero_ onwards, so we need to subtract 1 from the result of `match`:
+
+```{r}
+# Now, we need to encode the cell ids
+cell_ids <- match(rel_combined$env_cell_num, rel_X_env$cell_num)
+
+# IMPORTANT: These need to start from zero! So:
+cell_ids <- cell_ids - 1
+```
+
+Now we're pretty much good to go! Let's fit an example model with three environmental covariates and log-transformed duration:
+
+```{r}
+env_vars_to_use <- c('bio1', 'bio2', 'bio4')
+
+# Scale the environmental variables:
+to_scale <- rel_X_env[, env_vars_to_use]
+scaled_X_env <- scale(to_scale)
+scaled_X_env_df <- data.frame(scaled_X_env)
+
+env_formula <- paste(env_vars_to_use, collapse='+')
+
+env_formula
+```
+
+```{r}
+X_obs <- data.frame(log_duration = log(rel_combined$duration_minutes))
+
+obs_formula <- 'log_duration'
+```
+
+Now we have all we need and can fit the model:
+
+```{r}
+checklist_cell_ids <- cell_ids
+
+y_checklist <- rel_combined[, species_names]
+
+fit_result <- msod_vi(env_formula, obs_formula, scaled_X_env_df, X_obs, 
+                      y_checklist, checklist_cell_ids)
+```
+
+This object can now be used in the usual way. For example, we can take a look at the draws for the observation part of the model:
+
+```{r}
+coef_draws <- coef(fit_result)
+lapply(coef_draws$obs_slopes, summary)
+```
+
+Please see the `ebird-example` vignette for more detail about how to interpret the results of the model.

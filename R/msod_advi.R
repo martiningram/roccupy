@@ -34,6 +34,9 @@ msod_vi <- function(env_formula, obs_formula, X_env, X_checklist, y_checklist,
     model_obj <- occu_py$multi_species_occu_advi$MultiSpeciesOccuADVI(
         env_formula, obs_formula, M, n_draws, verbose)
 
+    # Make sure the checklist IDs are of the correct type
+    checklist_cell_ids <- reticulate::np_array(checklist_cell_ids, dtype='int64')
+
                                         # Fit the model
     model_obj$fit(X_env, X_checklist, y_checklist, checklist_cell_ids)
 
@@ -107,13 +110,13 @@ coef.msod_advi <- function(obj) {
     draws <- obj$draws
 
     # Make sure these are R objects
-    draws$env_intercepts <- py_to_r(draws$env_intercepts)
+    draws$env_intercepts <- reticulate::py_to_r(draws$env_intercepts)
 
-    draws$env_slopes <- lapply(draws$env_slopes, py_to_r)
-    draws$obs_slopes <- lapply(draws$obs_slopes, py_to_r)
+    draws$env_slopes <- lapply(draws$env_slopes, reticulate::py_to_r)
+    draws$obs_slopes <- lapply(draws$obs_slopes, reticulate::py_to_r)
 
-    draws$obs_prior_sds <- py_to_r(draws$obs_prior_sds)
-    draws$obs_prior_means <- py_to_r(draws$obs_prior_means)
+    draws$obs_prior_sds <- reticulate::py_to_r(draws$obs_prior_sds)
+    draws$obs_prior_means <- reticulate::py_to_r(draws$obs_prior_means)
 
     draws
 
