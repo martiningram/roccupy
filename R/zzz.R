@@ -27,9 +27,13 @@ np <- NULL
 #' @export
 install_occu_py <- function(gpu = TRUE) {
 
-    reticulate::py_install("git+https://github.com/martiningram/ml_tools.git", pip=TRUE)
-    reticulate::py_install("git+https://github.com/martiningram/jax_advi.git", pip=TRUE)
-    reticulate::py_install("git+https://github.com/pyro-ppl/numpyro@8bb94f170de3f6c276fe61e4c92cd4e21de70a4b", pip=TRUE)
+    reticulate::py_install(
+        "git+https://github.com/martiningram/ml_tools.git", pip=TRUE)
+    reticulate::py_install(
+        "git+https://github.com/martiningram/jax_advi.git", pip=TRUE)
+    reticulate::py_install(
+        "git+https://github.com/pyro-ppl/numpyro@8bb94f170de3f6c276fe61e4c92cd4e21de70a4b", 
+        pip=TRUE)
     reticulate::py_install("scikit-learn", pip=TRUE)
     reticulate::py_install("matplotlib", pip=TRUE)
     reticulate::py_install("pandas", pip=TRUE)
@@ -39,7 +43,9 @@ install_occu_py <- function(gpu = TRUE) {
 
     if (gpu) {
         
-        reticulate::py_install("jax==0.2.8 jaxlib==0.1.57+cuda101 -f https://storage.googleapis.com/jax-releases/jax_releases.html", pip=TRUE)
+        reticulate::py_install(
+            "jax==0.2.8 jaxlib==0.1.57+cuda101 -f https://storage.googleapis.com/jax-releases/jax_releases.html", 
+            pip=TRUE)
 
     } else {
 

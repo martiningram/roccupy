@@ -73,7 +73,8 @@ coef.ssod_maxlik <- function(obj) {
 summary.ssod_maxlik <- function(obj) {
 
     final_grad_norm <- sqrt(sum(obj$opt_result$jac)^2)
-    print(paste0('Optimisation finished with final gradient norm of ', final_grad_norm))
+    print(paste0('Optimisation finished with final gradient norm of ', 
+                 final_grad_norm))
 
     print('The estimated coefficients are:')
     print(coef(obj))
@@ -111,7 +112,8 @@ predict.ssod_maxlik <- function(obj, X_env_new, X_obs_new = NULL, type = 'env')
         env_preds <- cur_py_obj$predict_marginal_probabilities_direct(X_env_new)
         return(env_preds)
     } else {
-        obs_preds <- cur_py_obj$predict_marginal_probabilities_obs(X_env_new, X_obs_new)
+        obs_preds <- cur_py_obj$predict_marginal_probabilities_obs(
+            X_env_new, X_obs_new)
         return(obs_preds)
     }
 

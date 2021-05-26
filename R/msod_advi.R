@@ -31,8 +31,8 @@ msod_vi <- function(env_formula, obs_formula, X_env, X_checklist, y_checklist,
                     verbose = TRUE) {
 
     # Instantiate the python object
-    model_obj <- occu_py$multi_species_occu_advi$MultiSpeciesOccuADVI(env_formula,
-    obs_formula, M, n_draws, verbose)
+    model_obj <- occu_py$multi_species_occu_advi$MultiSpeciesOccuADVI(
+        env_formula, obs_formula, M, n_draws, verbose)
 
                                         # Fit the model
     model_obj$fit(X_env, X_checklist, y_checklist, checklist_cell_ids)
@@ -74,10 +74,12 @@ predict.msod_advi <- function(obj, X_env_new, X_obs_new = NULL, type = 'env')
     }
 
     if (type == 'env') {
-        env_preds <- obj$python_model$predict_marginal_probabilities_direct(X_env_new)
+        env_preds <- obj$python_model$predict_marginal_probabilities_direct(
+            X_env_new)
         return(env_preds)
     } else {
-        obs_preds <- obj$python_model$predict_marginal_probabilities_obs(X_env_new, X_obs_new)
+        obs_preds <- obj$python_model$predict_marginal_probabilities_obs(
+            X_env_new, X_obs_new)
         return(obs_preds)
     }
 
