@@ -62,9 +62,9 @@ not (about 20 minutes), so patience is advised if no GPU is available. The
 vignette rendered in PDF format is also available here:
 https://github.com/martiningram/roccupy/blob/main/vignettes/ebird-example.pdf .
 
-Note that if you would like to build the vignette yourself, you will need the
-`ggplot2`, `ggrepel` packages, as well as a working installation of LaTeX for
-use with RMarkdown (e.g. tinytex).
+If you would like to build the vignette yourself, you will need the `ggplot2`,
+`ggrepel` packages, as well as a working installation of LaTeX for use with
+RMarkdown (e.g. tinytex).
 
 ## How to use: Single-species occupancy detection
 
@@ -97,8 +97,12 @@ As mentioned in the previous section, `roccupy` uses a slightly different data
 format than other occupancy detection modelling packages. The [unmarked
 comparison
 vignette](https://github.com/martiningram/roccupy/blob/main/vignettes/compare_with_unmarked.pdf)
-discusses how to convert from the more common format to `roccupy`'s format, but
-here is a quick explanation.
+discusses how to convert from the more common format to `roccupy`'s
+format. There is also a vignette detailing how to go from [`auk`'s zero-filled
+format](https://cornelllabofornithology.github.io/auk/articles/auk.html) to
+`roccupy`'s format, which is available
+[here](https://github.com/martiningram/roccupy/blob/main/vignettes/eBird-auk-example.pdf)
+. In addition, here is a quick explainer.
 
 As the examples above show, the data required to fit `roccupy` models consists
 of four arguments: (1) `X_env`, (2) `X_checklist`, (3) `y_checklist`, and (4)
