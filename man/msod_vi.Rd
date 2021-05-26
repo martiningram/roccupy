@@ -30,12 +30,14 @@ model. Again, should be supported by patsy.}
 covariates. Dimensions (n_checklists, n_obs_covariates).}
 
 \item{y_checklist}{A DataFrame specifying whether each species was or was not
-observed for each visit (checklist). Dimensions (n_checklists, n_species).}
+observed for each visit (checklist). Dimensions (n_checklists,
+n_species).}
 
 \item{checklist_cell_ids}{A vector specifying which site (aka cell) each
-checklist belongs to. E.g. if checklist_cell_ids[2] = 3, the second checklist
-was made at site 3. Note that sites are number from 0, so this would be the
-_fourth_ site!}
+checklist belongs to. E.g. if checklist_cell_ids[2] = 3, the second
+checklist was made at site 3. Note that sites must be numbered from 0, so
+this would be the _fourth_ site -- i.e. the one whose environmental
+variables are in X_env[4, ] using R indexing!}
 
 \item{M}{The number of fixed draws to use in the variational
 approximations. Should be set as large as possible, though M > 100 is

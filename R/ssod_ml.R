@@ -4,20 +4,22 @@
 #' likelihood.
 #'
 #' @param env_formula Formula to use for the environment / suitability part of
-#' the model. Should be a string compatible with the patsy python package.
+#'     the model. Should be a string compatible with the patsy python package.
 #' @param obs_formula Formula to use for the observation / detection part of the
-#' model. Again, should be supported by patsy.
+#'     model. Again, should be supported by patsy.
 #' @param X_env A DataFrame containing the environmental covariates. Dimensions
-#' (n_sites, n_env_covariates).
+#'     (n_sites, n_env_covariates).
 #' @param X_checklist A DataFrame containing the observation
-#' covariates. Dimensions (n_checklists, n_obs_covariates).
+#'     covariates. Dimensions (n_checklists, n_obs_covariates).
 #' @param y_checklist A DataFrame specifying whether each species was or was not
-#' observed for each visit (checklist). As this is a single-species model, it
-#' must have only a single column, ideally named after the species of interest.
+#'     observed for each visit (checklist). As this is a single-species model,
+#'     it must have only a single column, ideally named after the species of
+#'     interest.
 #' @param checklist_cell_ids A vector specifying which site (aka cell) each
-#' checklist belongs to. E.g. if checklist_cell_ids[2] = 3, the second checklist
-#' was made at site 3. Note that sites are number from 0, so this would be the
-#' _fourth_ site!
+#'     checklist belongs to. E.g. if checklist_cell_ids[2] = 3, the second
+#'     checklist was made at site 3. Note that sites are number from 0, so this
+#'     this would be the _fourth_ site -- i.e. the one whose environmental
+#'     variables are in X_env[4, ] using R indexing!
 #'
 #' @return The fitted ssod_maxlik object.
 #' 
