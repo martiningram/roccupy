@@ -37,7 +37,8 @@ msod_vi <- function(env_formula, obs_formula, X_env, X_checklist, y_checklist,
         env_formula, obs_formula, M, n_draws, verbose)
 
     # Make sure the checklist IDs are of the correct type
-    checklist_cell_ids <- reticulate::np_array(checklist_cell_ids, dtype='int64')
+    checklist_cell_ids <- reticulate::np_array(
+        checklist_cell_ids, dtype='int64')
 
                                         # Fit the model
     model_obj$fit(X_env, X_checklist, y_checklist, checklist_cell_ids)

@@ -9,6 +9,8 @@ Maintainer: Martin Ingram <martin.ingram@gmail.com>
 RoxygenNote: 7.1.1
 Suggests: 
     knitr,
-    rmarkdown
+    rmarkdown,
+    testthat (>= 3.0.0)
 VignetteBuilder: knitr
 License: MIT + file LICENSE
+Config/testthat/edition: 3
