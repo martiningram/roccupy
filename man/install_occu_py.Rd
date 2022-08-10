@@ -4,7 +4,7 @@
 \alias{install_occu_py}
 \title{Installs the python requirements of the package.}
 \usage{
-install_occu_py(gpu = TRUE)
+install_occu_py(gpu = FALSE)
 }
 \arguments{
 \item{gpu}{Whether or not to install the GPU version of the package. Note
