@@ -5,17 +5,18 @@ occu_py <- NULL
 ml_tools <- NULL
 
 #' @export
-numpyro <- NULL
+np <- NULL
 
 #' @export
-np <- NULL
+jax <- NULL 
+
 
 .onLoad <- function(libname, pkgname) {
 
     occu_py <<- reticulate::import('occu_py', delay_load = TRUE)
     ml_tools <<- reticulate::import('ml_tools', delay_load = TRUE)
-    numpyro <<- reticulate::import('numpyro', delay_load = TRUE)
     np <<- reticulate::import('numpy', delay_load = TRUE)
+    jax <<- reticulate::import('jax', delay_load = TRUE)
 
 }
 
@@ -25,7 +26,7 @@ np <- NULL
 #' that using the GPU version is highly recommended.
 #' 
 #' @export
-install_occu_py <- function(gpu = TRUE) {
+install_occu_py <- function(gpu = FALSE) {
 
     reticulate::py_install(
         "git+https://github.com/martiningram/ml_tools.git", pip=TRUE)
@@ -39,7 +40,7 @@ install_occu_py <- function(gpu = TRUE) {
     reticulate::py_install("pandas", pip=TRUE)
     reticulate::py_install("arviz", pip=TRUE)
     reticulate::py_install("patsy", pip=TRUE)
-    reticulate::py_install("'pystan<3'", pip=TRUE)
+    reticulate::py_install('git+https://github.com/martiningram/occu_py.git', pip=TRUE)
 
     if (gpu) {
         
@@ -49,7 +50,8 @@ install_occu_py <- function(gpu = TRUE) {
 
     } else {
 
-        reticulate::py_install("jax==0.2.8 jaxlib==0.1.57", pip=TRUE)
+        reticulate::py_install("jax[cpu]==0.3.14", pip=TRUE)
+        reticulate::py_install("jaxlib==0.3.14", pip=TRUE)
 
     }
 
@@ -66,9 +68,9 @@ install_occu_py <- function(gpu = TRUE) {
 set_gpu <- function(use_gpu = TRUE) {
 
     if (use_gpu) {
-        numpyro$set_platform('gpu')
+        jax$config$update('jax_platform_name', 'gpu')
     } else {
-        numpyro$set_platform('cpu')
+        jax$config$update('jax_platform_name', 'cpu')
     }
 
 }
