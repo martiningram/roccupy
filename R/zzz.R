@@ -42,9 +42,12 @@ install_occu_py <- function(gpu = FALSE) {
 
     if (gpu) {
         
-        reticulate::py_install(
-            "jax==0.2.8 jaxlib==0.1.57+cuda101 -f https://storage.googleapis.com/jax-releases/jax_releases.html", 
-            pip=TRUE)
+        # reticulate::py_install(
+        #     "jax==0.2.8 jaxlib==0.1.57+cuda101 -f https://storage.googleapis.com/jax-releases/jax_releases.html", 
+        #     pip=TRUE)
+	# TODO: Test this on a GPU machine
+        reticulate::py_install("jax[cuda]==0.3.14 -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html", pip=TRUE)
+
 
     } else {
 
