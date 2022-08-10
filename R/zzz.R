@@ -37,6 +37,7 @@ install_occu_py <- function(gpu = FALSE) {
     reticulate::py_install("pandas", pip=TRUE)
     reticulate::py_install("arviz", pip=TRUE)
     reticulate::py_install("patsy", pip=TRUE)
+    reticulate::py_install("tqdm", pip=TRUE)
     reticulate::py_install('git+https://github.com/martiningram/occu_py.git', pip=TRUE)
 
     if (gpu) {

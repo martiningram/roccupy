@@ -18,16 +18,18 @@ knitr::opts_chunk$set(
 ```{r setup}
 # Ensure everything is clean
 rm(list=ls())
+
+library(reticulate)
+# If you are running this yourself, please make sure that reticulate uses the 
+# correct virtual environment.
+use_condaenv('reticulate')
 library(roccupy)
+
 ```
 
 ```{r}
-library(reticulate)
-
-# If you are running this yourself, please make sure that reticulate uses the 
-# correct virtual environment.
 # Set this to FALSE if you don't have a GPU.
-roccupy::set_gpu(TRUE)
+roccupy::set_gpu(FALSE)
 ```
 
 This document shows how on a small subset of eBird using 8,000 checklists and 32 species.
